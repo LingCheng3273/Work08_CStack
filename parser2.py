@@ -45,15 +45,21 @@ The file follows the following format:
 
 See the file script for an example of the file format
 """
-ARG_COMMANDS = [ 'line', 'scale', 'move', 'rotate', 'save', 'circle', 'bezier', 'hermite', 'box', 'sphere', 'torus' ]
+ARG_COMMANDS = [ 'line', 'scale', 'move', 'rotate', 'save', 'circle', 'bezier', 'hermite', 'box', 'sphere', 'torus', 'push', 'pop' ]
 
 def parse_file( fname, edges, transform, screen, color ):
 
     f = open(fname)
     lines = f.readlines()
+    stack= []
 
     step = 0.1
     c = 0
+
+    matrix= new_matrix()
+    if len(edges) == 0:
+        edges= matrix
+        
     while c < len(lines):
         line = lines[c].strip()
         #print ':' + line + ':'
@@ -65,53 +71,67 @@ def parse_file( fname, edges, transform, screen, color ):
             
         if line == 'sphere':
             #print 'SPHERE\t' + str(args)
-            add_sphere(edges,
+            tmp= []
+            add_sphere(tmp,
                        float(args[0]), float(args[1]), float(args[2]),
                        float(args[3]), step)
             
         elif line == 'torus':
             #print 'TORUS\t' + str(args)
-            add_torus(edges,
+            tmp= []
+            add_torus(tmp,
                       float(args[0]), float(args[1]), float(args[2]),
                       float(args[3]), float(args[4]), step)
             
         elif line == 'box':
             #print 'BOX\t' + str(args)
-            add_box(edges,
+            tmp= []
+            add_box(tmp,
                     float(args[0]), float(args[1]), float(args[2]),
                     float(args[3]), float(args[4]), float(args[5]))
+            matrix_mult(stack[len(stack)-1], tmp)
+            draw_polygons(tmp, screen, color)
             
         elif line == 'circle':
             #print 'CIRCLE\t' + str(args)
-            add_circle(edges,
+            tmp= []
+            add_circle(tmp,
                        float(args[0]), float(args[1]), float(args[2]),
                        float(args[3]), step)
+            matrix_mult(stack[len(stack)-1], tmp)
+            draw_lines(tmp, screen, color)
+
 
         elif line == 'hermite' or line == 'bezier':
             #print 'curve\t' + line + ": " + str(args)
-            add_curve(edges,
+            tmp= []
+            add_curve(tmp,
                       float(args[0]), float(args[1]),
                       float(args[2]), float(args[3]),
                       float(args[4]), float(args[5]),
                       float(args[6]), float(args[7]),
-                      step, line)                      
+                      step, line)
+            matrix_mult(stack[len(stack)-1], tmp)
+            draw_lines(tmp, screen, color)
             
         elif line == 'line':            
             #print 'LINE\t' + str(args)
-
-            add_edge( edges,
+            tmp= []
+            add_edge( tmp,
                       float(args[0]), float(args[1]), float(args[2]),
                       float(args[3]), float(args[4]), float(args[5]) )
+            matrix_mult(stack[len(stack)-1], tmp)
+            draw_lines(tmp, screen, color)
 
         elif line == 'scale':
             #print 'SCALE\t' + str(args)
             t = make_scale(float(args[0]), float(args[1]), float(args[2]))
-            matrix_mult(t, transform)
+            matrix_mult(t, stack[len(stack)-1])
 
         elif line == 'move':
             #print 'MOVE\t' + str(args)
             t = make_translate(float(args[0]), float(args[1]), float(args[2]))
-            matrix_mult(t, transform)
+            matrix_mult(t, stack[len(stack)-1])
 
         elif line == 'rotate':
             #print 'ROTATE\t' + str(args)
@@ -123,8 +143,17 @@ def parse_file( fname, edges, transform, screen, color ):
                 t = make_rotY(theta)
             else:
                 t = make_rotZ(theta)
-            matrix_mult(t, transform)
-                
+            matrix_mult(t, stack[len(stack)-1])
+
+        elif line == 'push':
+            print edges
+            top= edges[len(edges)-1] #index of current top of coordinate system
+            print top
+            edges.append(top[:])
+
+        elif line == 'pop':
+            edges.pop()
+        
         elif line == 'clear':
             edges = []
             
