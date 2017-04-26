@@ -7,14 +7,14 @@ move
 box
 -100 125 50 200 250 100
 #HEAD
-1push
-1rotate
-1y 90
-1move
-10 175 0
-1sphere
-10 0 0 50
-1pop
+push
+rotate
+y 90
+move
+0 175 0
+sphere
+0 0 0 50
+pop
 1#LEFT ARM
 1push
 1move
@@ -62,3 +62,4 @@ box
 1100 -125 0
 1box
 1-50 0 40 50 120 80
+display
